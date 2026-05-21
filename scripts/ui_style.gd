@@ -38,6 +38,12 @@ const COLOR_TITLE_TEXT: String = "#F3DFA2"
 const COLOR_LABEL_TEXT: String = "#DDE3EA"
 const COLOR_MESSAGE_TEXT: String = "#A8DADC"
 
+const COLOR_VARIATION_BACKGROUND: String = "#20344F"
+const COLOR_VARIATION_BORDER: String = "#6EA8FE"
+
+const COLOR_VARIATION_SELECTED_BACKGROUND: String = "#2E4D73"
+const COLOR_VARIATION_SELECTED_BORDER: String = "#F3DFA2"
+
 const BORDER_WIDTH_NORMAL: int = 2
 const BORDER_WIDTH_SELECTED: int = 3
 const CORNER_RADIUS: int = 10
@@ -259,3 +265,24 @@ static func card_bbcode(card: Dictionary) -> String:
 static func apply_life_label(label: Label) -> void:
 	label.add_theme_color_override(THEME_FONT_COLOR, Color(COLOR_HEARTS_TEXT))
 	label.add_theme_font_size_override(THEME_FONT_SIZE, LIFE_FONT_SIZE)
+
+
+static func apply_variation_button(button: Button, is_selected: bool) -> void:
+	if is_selected:
+		_apply_button_style(
+			button,
+			COLOR_VARIATION_SELECTED_BACKGROUND,
+			COLOR_VARIATION_SELECTED_BORDER,
+			COLOR_CARD_TEXT,
+			BORDER_WIDTH_SELECTED,
+			BUTTON_FONT_SIZE
+		)
+	else:
+		_apply_button_style(
+			button,
+			COLOR_VARIATION_BACKGROUND,
+			COLOR_VARIATION_BORDER,
+			COLOR_CARD_TEXT,
+			BORDER_WIDTH_NORMAL,
+			BUTTON_FONT_SIZE
+		)

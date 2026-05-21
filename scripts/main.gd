@@ -45,8 +45,23 @@ func _show_layout_select() -> void:
 	_set_screen(screen)
 
 	screen.setup()
-	screen.layout_selected.connect(_show_game)
+	screen.layout_selected.connect(_show_variation_select)
 	screen.back_pressed.connect(_show_main_menu)
+
+
+func _show_variation_select(layout_id: String) -> void:
+	var screen: VariationSelectView = VariationSelectView.new()
+
+	_set_screen(screen)
+
+	screen.setup(layout_id)
+
+	screen.variations_selected.connect(
+		func(variation_ids: Array[String]) -> void:
+			_show_game(layout_id, variation_ids)
+	)
+
+	screen.back_pressed.connect(_show_layout_select)
 
 
 func _show_rules() -> void:
@@ -58,12 +73,12 @@ func _show_rules() -> void:
 	screen.back_pressed.connect(_show_main_menu)
 
 
-func _show_game(layout_id: String) -> void:
+func _show_game(layout_id: String, variation_ids: Array[String]) -> void:
 	var screen: GameScreen = GameScreen.new()
 
 	_set_screen(screen)
 
-	screen.setup(layout_id)
+	screen.setup(layout_id, variation_ids)
 	screen.main_menu_pressed.connect(_show_main_menu)
 
 

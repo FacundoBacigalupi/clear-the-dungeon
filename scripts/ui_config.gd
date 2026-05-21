@@ -6,11 +6,16 @@ const NOT_FOUND_INDEX: int = -1
 const DISPLAY_INDEX_OFFSET: int = 1
 
 const LEFT_PANEL_WIDTH: float = 140.0
-const RIGHT_PANEL_WIDTH: float = 150.0
+const RIGHT_PANEL_WIDTH: float = 170.0
 const POWER_DECK_WIDTH: float = 120.0
 const POWER_DECK_HEIGHT: float = 160.0
 const HAND_CARD_WIDTH: float = 120.0
 const HAND_CARD_HEIGHT: float = 140.0
+const RESERVE_CARD_WIDTH: float = 120.0
+const RESERVE_CARD_HEIGHT: float = 64.0
+const ABILITY_BUTTON_WIDTH: float = 120.0
+const ABILITY_BUTTON_HEIGHT: float = 42.0
+const SECTION_TOP_MARGIN: float = 16.0
 const DISCARD_BUTTON_WIDTH: float = 120.0
 const DISCARD_BUTTON_HEIGHT: float = 50.0
 const RESET_BUTTON_WIDTH: float = 120.0
@@ -54,6 +59,10 @@ const EMPTY_TEXT: String = ""
 const TEXT_TITLE: String = "Clear the Dungeon"
 const TEXT_INITIAL_MESSAGE: String = "Play cards or press End Turn."
 const TEXT_HAND: String = "Hand"
+const TEXT_POWER_RESERVE: String = "Reserve"
+const TEXT_SET_RESERVE: String = "Set Reserve"
+const TEXT_SPECIAL_ABILITIES: String = "Abilities"
+const TEXT_DOUBLE_PENDING: String = "Next card x2"
 const TEXT_EMPTY: String = "Empty"
 const TEXT_HIDDEN: String = "Hidden"
 const TEXT_TAKE_LOOT: String = "Take"
@@ -73,6 +82,10 @@ const TEXT_AUTO_END_TURN_PREFIX: String = "No cards left. Auto end turn: "
 const TEXT_MONSTER_DAMAGE_FORMAT: String = "\n\n%d/%d"
 const TEXT_MONSTER_KILL_READY: String = "\n\nKill ready"
 
+const TEXT_DIAMOND_TOP: String = "Top"
+const TEXT_DIAMOND_LEAVE: String = "Leave"
+const TEXT_DIAMOND_BOTTOM_FORMAT: String = "Bottom: %s"
+
 const TEXT_LIFE_HEART: String = "♥"
 const TEXT_LIFE_SEPARATOR: String = " "
 const TEXT_NO_LIFE: String = ""
@@ -82,6 +95,14 @@ const TEXT_LIFE_LINE_BREAK: String = "\n"
 const TEXT_MENU_PLAY: String = "Play"
 const TEXT_MENU_RULES: String = "Rules"
 const TEXT_MENU_QUIT: String = "Quit"
+
+const TEXT_VARIATION_SELECT_TITLE: String = "Choose Variations"
+
+const VARIATION_SELECT_SCREEN_MARGIN: int = 36
+const VARIATION_OPTION_SEPARATION: int = 14
+const VARIATION_BUTTON_WIDTH: float = 420.0
+const VARIATION_BUTTON_HEIGHT: float = 64.0
+const VARIATION_BUTTONS_TOP_MARGIN: float = 28.0
 
 const TEXT_LAYOUT_SELECT_TITLE: String = "Choose Layout"
 const TEXT_LAYOUT_BUTTON_FORMAT: String = "%s\n\n%s"

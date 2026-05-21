@@ -48,15 +48,18 @@ const MONSTER_RANKS: Array[String] = [
 ]
 
 const ACE_VALUE: int = 1
+const BOOMER_ACE_VALUE: int = 11
 const JOKER_VALUE: int = 10
 const JACK_POWER: int = 11
 const QUEEN_POWER: int = 12
 const KING_POWER: int = 13
 const INVALID_VALUE: int = 0
+const DOUBLE_ATTACK_MULTIPLIER: int = 2
 
 const CARD_KEY_RANK: String = "rank"
 const CARD_KEY_SUIT: String = "suit"
 const CARD_KEY_TYPE: String = "type"
+const CARD_KEY_DOUBLED_ATTACK: String = "doubled_attack"
 
 
 static func make_card(rank: String, suit: String, card_type: String) -> Dictionary:
@@ -91,16 +94,36 @@ static func is_joker(card: Dictionary) -> bool:
 	return not card.is_empty() and card[CARD_KEY_RANK] == RANK_JOKER
 
 
+static func is_ace(card: Dictionary) -> bool:
+	return not card.is_empty() and card[CARD_KEY_RANK] == RANK_ACE
+
+
+static func is_king(card: Dictionary) -> bool:
+	return not card.is_empty() and card[CARD_KEY_RANK] == RANK_KING
+
+
 static func power_value(card: Dictionary) -> int:
+	return power_value_with_variations(card, false)
+
+
+static func power_value_with_variations(card: Dictionary, boomer_ace_enabled: bool) -> int:
 	var rank: String = card[CARD_KEY_RANK]
+	var value: int = INVALID_VALUE
 
 	if rank == RANK_ACE:
-		return ACE_VALUE
+		if boomer_ace_enabled:
+			value = BOOMER_ACE_VALUE
+		else:
+			value = ACE_VALUE
+	elif rank == RANK_JOKER:
+		value = JOKER_VALUE
+	else:
+		value = int(rank)
 
-	if rank == RANK_JOKER:
-		return JOKER_VALUE
+	if card.has(CARD_KEY_DOUBLED_ATTACK) and card[CARD_KEY_DOUBLED_ATTACK]:
+		value *= DOUBLE_ATTACK_MULTIPLIER
 
-	return int(rank)
+	return value
 
 
 static func monster_power(monster: Dictionary) -> int:
@@ -124,14 +147,27 @@ static func trigger_matches(trigger_card: Dictionary, monster: Dictionary) -> bo
 	return trigger_card[CARD_KEY_SUIT] == monster[CARD_KEY_SUIT]
 
 
+static func card_without_temporary_flags(card: Dictionary) -> Dictionary:
+	var clean_card: Dictionary = card.duplicate()
+	clean_card.erase(CARD_KEY_DOUBLED_ATTACK)
+	return clean_card
+
+
 static func card_text(card: Dictionary) -> String:
 	if card.is_empty():
 		return ""
 
-	if is_joker(card):
-		return RANK_JOKER
+	var text: String = ""
 
-	return "%s%s" % [card[CARD_KEY_RANK], card[CARD_KEY_SUIT]]
+	if is_joker(card):
+		text = RANK_JOKER
+	else:
+		text = "%s%s" % [card[CARD_KEY_RANK], card[CARD_KEY_SUIT]]
+
+	if card.has(CARD_KEY_DOUBLED_ATTACK) and card[CARD_KEY_DOUBLED_ATTACK]:
+		text += " x2"
+
+	return text
 
 
 static func short_text(card: Dictionary) -> String:

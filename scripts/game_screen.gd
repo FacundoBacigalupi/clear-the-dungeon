@@ -4,6 +4,7 @@ class_name GameScreen
 signal main_menu_pressed
 
 var selected_layout_id: String = LayoutConfig.DEFAULT_LAYOUT_ID
+var selected_variation_ids: Array[String] = []
 
 var game: GameState = GameState.new()
 
@@ -13,11 +14,14 @@ var board_view: BoardView
 var hand_panel: HandPanel
 var message_label: Label
 
-var selected_hand_indices: Array[int] = []
+var selected_card_refs: Array[Dictionary] = []
 
-func setup(layout_id: String) -> void:
+func setup(layout_id: String, variation_ids: Array[String]) -> void:
 	selected_layout_id = layout_id
+	selected_variation_ids = variation_ids.duplicate()
+
 	game.configure_layout(selected_layout_id)
+	game.configure_variations(selected_variation_ids)
 
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
@@ -70,6 +74,11 @@ func _build_ui() -> void:
 	hand_panel = HandPanel.new()
 	hand_panel.setup()
 	hand_panel.hand_card_pressed.connect(_on_hand_card_pressed)
+	hand_panel.reserve_card_pressed.connect(_on_reserve_card_pressed)
+	hand_panel.reserve_setup_pressed.connect(_on_reserve_setup_pressed)
+	hand_panel.ability_pressed.connect(_on_ability_pressed)
+	hand_panel.diamond_top_pressed.connect(_on_diamond_top_pressed)
+	hand_panel.diamond_leave_pressed.connect(_on_diamond_leave_pressed)
 	hand_panel.end_turn_pressed.connect(_on_end_turn_pressed)
 	content.add_child(hand_panel)
 
@@ -82,15 +91,17 @@ func _build_ui() -> void:
 
 
 func _start_new_game() -> void:
-	selected_hand_indices.clear()
+	selected_card_refs.clear()
 
-	game.new_game(selected_layout_id)
+	game.new_game(selected_layout_id, selected_variation_ids)
 
 	var draw_message: String = game.draw_hand()
 
 	_update_all_views()
 
-	if game.hand.size() > GameState.EMPTY_COUNT:
+	if game.power_reserve_setup_pending:
+		message_label.text = draw_message
+	elif game.hand.size() > GameState.EMPTY_COUNT:
 		message_label.text = UIConfig.TEXT_INITIAL_MESSAGE
 	else:
 		message_label.text = draw_message
@@ -98,7 +109,9 @@ func _start_new_game() -> void:
 
 func _on_reset_pressed() -> void:
 	_start_new_game()
-	message_label.text = UIConfig.TEXT_GAME_RESET
+
+	if not game.power_reserve_setup_pending:
+		message_label.text = UIConfig.TEXT_GAME_RESET
 
 
 func _on_main_menu_pressed() -> void:
@@ -112,14 +125,75 @@ func _on_hand_card_pressed(index: int) -> void:
 	if index >= game.hand.size():
 		return
 
-	var selected_position: int = selected_hand_indices.find(index)
+	_toggle_selected_card(GameState.CARD_SOURCE_HAND, index)
+	_update_all_views()
 
-	if selected_position == UIConfig.NOT_FOUND_INDEX:
-		selected_hand_indices.append(index)
-	else:
-		selected_hand_indices.remove_at(selected_position)
+
+func _on_reserve_card_pressed(index: int) -> void:
+	if game.game_finished:
+		return
+
+	if index >= game.power_reserve.size():
+		return
+
+	_toggle_selected_card(GameState.CARD_SOURCE_RESERVE, index)
+	_update_all_views()
+
+
+func _on_reserve_setup_pressed() -> void:
+	if game.game_finished:
+		return
+
+	var hand_indices: Array[int] = []
+
+	for card_ref in selected_card_refs:
+		if card_ref[GameState.PLAY_REF_KEY_SOURCE] != GameState.CARD_SOURCE_HAND:
+			message_label.text = GameState.MSG_POWER_RESERVE_NEEDS_TWO
+			return
+
+		hand_indices.append(card_ref[GameState.PLAY_REF_KEY_INDEX])
+
+	var result_message: String = game.set_power_reserve_from_hand(hand_indices)
+	selected_card_refs.clear()
 
 	_update_all_views()
+	message_label.text = result_message
+
+
+func _on_ability_pressed(ability_index: int) -> void:
+	if game.game_finished:
+		return
+
+	var result_message: String = game.use_king_ability(ability_index, selected_card_refs)
+
+	if result_message != GameState.MSG_HEART_SELECT_ONE_HAND:
+		selected_card_refs.clear()
+
+	_update_all_views()
+	message_label.text = result_message
+	_auto_end_turn_if_needed()
+
+
+func _on_diamond_top_pressed() -> void:
+	_resolve_diamond_choice(true)
+
+
+func _on_diamond_leave_pressed() -> void:
+	_resolve_diamond_choice(false)
+
+
+func _resolve_diamond_choice(move_to_top: bool) -> void:
+	if game.game_finished:
+		return
+
+	var result_message: String = game.choose_diamond_king_result(move_to_top)
+
+	selected_card_refs.clear()
+
+	_update_all_views()
+	message_label.text = result_message
+
+	_auto_end_turn_if_needed()
 
 
 func _on_board_slot_pressed(row: int, col: int) -> void:
@@ -134,7 +208,7 @@ func _on_board_slot_pressed(row: int, col: int) -> void:
 		message_label.text = UIConfig.TEXT_SLOT_EMPTY_STATUS
 		return
 
-	if selected_hand_indices.is_empty():
+	if selected_card_refs.is_empty():
 		if game.is_slot_loot(row, col):
 			var loot_message: String = game.take_loot(row, col)
 
@@ -147,9 +221,9 @@ func _on_board_slot_pressed(row: int, col: int) -> void:
 		message_label.text = board_view.get_slot_status_text(game, row, col)
 		return
 
-	var result_message: String = game.place_hand_cards_on_slot(selected_hand_indices, row, col)
+	var result_message: String = game.place_play_cards_on_slot(selected_card_refs, row, col)
 
-	selected_hand_indices.clear()
+	selected_card_refs.clear()
 
 	_update_all_views()
 	message_label.text = result_message
@@ -161,7 +235,7 @@ func _on_end_turn_pressed() -> void:
 	if game.game_finished:
 		return
 
-	selected_hand_indices.clear()
+	selected_card_refs.clear()
 
 	var result_message: String = game.draw_hand()
 
@@ -172,7 +246,7 @@ func _on_end_turn_pressed() -> void:
 func _update_all_views() -> void:
 	side_panel.refresh(game)
 	board_view.refresh(game)
-	hand_panel.refresh(game, selected_hand_indices)
+	hand_panel.refresh(game, selected_card_refs)
 
 	call_deferred("_update_layout")
 
@@ -219,6 +293,12 @@ func _auto_end_turn_if_needed() -> void:
 	if game.game_finished:
 		return
 
+	if game.power_reserve_setup_pending:
+		return
+
+	if game.diamond_ability_pending:
+		return
+
 	if game.hand.size() > GameState.EMPTY_COUNT:
 		return
 
@@ -229,3 +309,22 @@ func _auto_end_turn_if_needed() -> void:
 
 	_update_all_views()
 	message_label.text = UIConfig.TEXT_AUTO_END_TURN_PREFIX + result_message
+
+
+func _toggle_selected_card(source: String, index: int) -> void:
+	var selected_position: int = _find_selected_card(source, index)
+
+	if selected_position == UIConfig.NOT_FOUND_INDEX:
+		selected_card_refs.append(game.make_play_card_ref(source, index))
+	else:
+		selected_card_refs.remove_at(selected_position)
+
+
+func _find_selected_card(source: String, index: int) -> int:
+	for selected_index in range(selected_card_refs.size()):
+		var card_ref: Dictionary = selected_card_refs[selected_index]
+
+		if card_ref[GameState.PLAY_REF_KEY_SOURCE] == source and card_ref[GameState.PLAY_REF_KEY_INDEX] == index:
+			return selected_index
+
+	return UIConfig.NOT_FOUND_INDEX

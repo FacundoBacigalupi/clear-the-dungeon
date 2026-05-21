@@ -38,7 +38,7 @@ func refresh(game: GameState) -> void:
 				button.disabled = game.game_finished
 
 			else:
-				button.text = _monster_button_text(card, attack_cards)
+				button.text = _monster_button_text(game, card, attack_cards)
 				UIStyle.apply_monster_button(button, card)
 				button.disabled = game.game_finished
 
@@ -96,7 +96,7 @@ func _on_slot_pressed(row: int, col: int) -> void:
 	slot_pressed.emit(row, col)
 
 
-func _monster_button_text(monster: Dictionary, attack_cards: Array) -> String:
+func _monster_button_text(game: GameState, monster: Dictionary, attack_cards: Array) -> String:
 	var text: String = CardUtils.card_text(monster)
 
 	if attack_cards.is_empty():
@@ -106,7 +106,7 @@ func _monster_button_text(monster: Dictionary, attack_cards: Array) -> String:
 		text += UIConfig.TEXT_MONSTER_KILL_READY
 		return text
 
-	var current_damage: int = _attack_damage(attack_cards)
+	var current_damage: int = _attack_damage(game, attack_cards)
 	var required_damage: int = CardUtils.monster_power(monster)
 
 	text += UIConfig.TEXT_MONSTER_DAMAGE_FORMAT % [
@@ -117,7 +117,7 @@ func _monster_button_text(monster: Dictionary, attack_cards: Array) -> String:
 	return text
 
 
-func _attack_damage(attack_cards: Array) -> int:
+func _attack_damage(game: GameState, attack_cards: Array) -> int:
 	var damage: int = GameState.EMPTY_COUNT
 	var max_damage_cards: int = min(
 		attack_cards.size(),
@@ -126,7 +126,7 @@ func _attack_damage(attack_cards: Array) -> int:
 
 	for attack_card_index in range(max_damage_cards):
 		var card: Dictionary = attack_cards[attack_card_index]
-		damage += CardUtils.power_value(card)
+		damage += game.get_attack_card_value(card)
 
 	return damage
 
